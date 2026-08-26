@@ -147,14 +147,23 @@ export default function AdminPage() {
 
   return (
     <div className="max-w-5xl mx-auto my-4 p-4 sm:p-6 bg-white rounded-xl shadow border space-y-6">
-      {/* Cabeçalho */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-4 border-b">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-800">Painel Administrativo</h1>
-          <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
-            Perfil: Administrador
-          </span>
+      
+      {/* CABEÇALHO COM LOGO PROFISSIONAL */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b">
+        <div className="flex items-center gap-3">
+          <img 
+            src="watermarked_img_9035154237853069771.jpg" 
+            alt="Sistema Pro Logo" 
+            className="h-10 w-auto object-contain rounded"
+          />
+          <div className="border-l pl-3 border-gray-200">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-800">Painel Administrativo</h1>
+            <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
+              Perfil: Administrador
+            </span>
+          </div>
         </div>
+
         <button
           onClick={handleLogout}
           className="text-xs font-medium bg-red-50 text-red-600 hover:bg-red-100 px-3 py-1.5 rounded transition border border-red-200"
@@ -328,15 +337,28 @@ export default function AdminPage() {
                         {prj.status}
                       </span>
                     </td>
-                    <td className="p-2.5 border text-center">
+
+                    {/* MINIATURA DO COMPROVANTE */}
+                    <td className="p-2.5 border text-center align-middle">
                       {prj.comprovante_url ? (
-                        <a href={prj.comprovante_url} target="_blank" rel="noreferrer" className="text-blue-600 underline font-medium">
-                          Ver Foto
+                        <a 
+                          href={prj.comprovante_url} 
+                          target="_blank" 
+                          rel="noreferrer" 
+                          className="inline-block hover:opacity-80 transition"
+                          title="Clique para abrir foto inteira"
+                        >
+                          <img 
+                            src={prj.comprovante_url} 
+                            alt="Comprovante" 
+                            className="w-10 h-10 object-cover rounded border shadow-sm mx-auto" 
+                          />
                         </a>
                       ) : (
                         <span className="text-gray-400">—</span>
                       )}
                     </td>
+
                     <td className="p-2.5 border text-center">
                       {prj.latitude && prj.longitude ? (
                         <a
