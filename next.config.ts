@@ -1,13 +1,7 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  typescript: {
-    // Ignora erros de tipagem estrita apenas no build para garantir o deploy
-    ignoreBuildErrors: true,
-  },
-  eslint: {
-    // Ignora avisos do linter durante o build
-    ignoreDuringBuilds: true,
-  },
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+  /* opções de configuração aqui (se houver) */
 };
 
 export default nextConfig;
