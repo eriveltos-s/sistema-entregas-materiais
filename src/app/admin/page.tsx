@@ -6,11 +6,14 @@ import { supabase } from '@/lib/supabase';
 interface Cliente {
   id: string;
   nome: string;
+  email?: string;
+  created_at?: string;
 }
 
 interface Motorista {
   id: string;
   nome: string;
+  created_at?: string;
 }
 
 interface Projeto {
@@ -26,18 +29,25 @@ interface Projeto {
 }
 
 export default function AdminPage() {
-  const [aba, setAba] = useState<'projeto' | 'cliente' | 'motorista'>('projeto');
+  const [aba, setAba] = useState<
+    'projeto' | 'cliente' | 'motorista' | 'consultar_clientes' | 'consultar_motoristas'
+  >('projeto');
 
   // Formulários
   const [nomeCliente, setNomeCliente] = useState('');
+  const [emailCliente, setEmailCliente] = useState('');
+  const [senhaCliente, setSenhaCliente] = useState('');
+
   const [nomeMotorista, setNomeMotorista] = useState('');
   const [numeroProjeto, setNumeroProjeto] = useState('');
   const [clienteId, setClienteId] = useState('');
   const [motoristaId, setMotoristaId] = useState('');
 
-  // Filtros da Tabela
+  // Filtros de Busca
   const [filtroBusca, setFiltroBusca] = useState('');
   const [filtroStatus, setFiltroStatus] = useState('todos');
+  const [buscaCliente, setBuscaCliente] = useState('');
+  const [buscaMotorista, setBuscaMotorista] = useState('');
 
   // Listas
   const [clientes, setClientes] = useState<Cliente[]>([]);
@@ -63,8 +73,8 @@ export default function AdminPage() {
 
   async function carregarDados() {
     setCarregando(true);
-    const { data: cData } = await supabase.from('clientes').select('id, nome').order('nome');
-    const { data: mData } = await supabase.from('motoristas').select('id, nome').order('nome');
+    const { data: cData } = await supabase.from('clientes').select('id, nome, email, created_at').order('nome');
+    const { data: mData } = await supabase.from('motoristas').select('id, nome, created_at').order('nome');
     
     const { data: pData } = await supabase
       .from('projetos')
@@ -88,30 +98,44 @@ export default function AdminPage() {
     setCarregando(false);
   }
 
+  // CADASTRAR CLIENTE
   async function handleCadastrarCliente(e: React.FormEvent) {
     e.preventDefault();
     setMensagem('');
-    const { error } = await supabase.from('clientes').insert([{ nome: nomeCliente }]);
-    if (error) setMensagem(`Erro: ${error.message}`);
-    else {
-      setMensagem('Cliente cadastrado!');
+
+    const { error } = await supabase.from('clientes').insert([
+      { 
+        nome: nomeCliente,
+        email: emailCliente.toLowerCase().trim(),
+        senha: senhaCliente
+      }
+    ]);
+
+    if (error) {
+      setMensagem(`Erro ao cadastrar cliente: ${error.message}`);
+    } else {
+      setMensagem('Cliente e login de acesso cadastrados com sucesso!');
       setNomeCliente('');
+      setEmailCliente('');
+      setSenhaCliente('');
       carregarDados();
     }
   }
 
+  // CADASTRAR MOTORISTA
   async function handleCadastrarMotorista(e: React.FormEvent) {
     e.preventDefault();
     setMensagem('');
     const { error } = await supabase.from('motoristas').insert([{ nome: nomeMotorista }]);
     if (error) setMensagem(`Erro: ${error.message}`);
     else {
-      setMensagem('Motorista cadastrado!');
+      setMensagem('Motorista cadastrado com sucesso!');
       setNomeMotorista('');
       carregarDados();
     }
   }
 
+  // CADASTRAR PROJETO
   async function handleCadastrarProjeto(e: React.FormEvent) {
     e.preventDefault();
     setMensagem('');
@@ -125,7 +149,7 @@ export default function AdminPage() {
     ]);
     if (error) setMensagem(`Erro: ${error.message}`);
     else {
-      setMensagem('Projeto cadastrado!');
+      setMensagem('Projeto cadastrado com sucesso!');
       setNumeroProjeto('');
       setClienteId('');
       setMotoristaId('');
@@ -133,7 +157,56 @@ export default function AdminPage() {
     }
   }
 
-  // Projetos filtrados na busca
+  // EXCLUIR CLIENTE
+  async function handleExcluirCliente(id: string, nome: string) {
+    if (!confirm(`Tem certeza que deseja excluir o cliente "${nome}"? Isso pode afetar os projetos vinculados.`)) return;
+
+    const { error } = await supabase.from('clientes').delete().eq('id', id);
+    if (error) alert(`Erro ao excluir: ${error.message}`);
+    else {
+      setClientes(clientes.filter((c) => c.id !== id));
+      setMensagem(`Cliente ${nome} excluído.`);
+    }
+  }
+
+  // EXCLUIR MOTORISTA
+  async function handleExcluirMotorista(id: string, nome: string) {
+    if (!confirm(`Tem certeza que deseja excluir o motorista "${nome}"?`)) return;
+
+    const { error } = await supabase.from('motoristas').delete().eq('id', id);
+    if (error) alert(`Erro ao excluir: ${error.message}`);
+    else {
+      setMotoristas(motoristas.filter((m) => m.id !== id));
+      setMensagem(`Motorista ${nome} excluído.`);
+    }
+  }
+
+  // EXCLUIR PROJETO
+  async function handleExcluirProjeto(id: string, numero: string) {
+    if (!confirm(`Tem certeza que deseja excluir o projeto ${numero}?`)) return;
+
+    const { error } = await supabase.from('projetos').delete().eq('id', id);
+    if (error) alert(`Erro ao excluir: ${error.message}`);
+    else {
+      setProjetos(projetos.filter((p) => p.id !== id));
+      setMensagem(`Projeto ${numero} excluído.`);
+    }
+  }
+
+  // ALTERAR STATUS
+  async function handleAlterarStatus(id: string, novoStatus: string) {
+    const { error } = await supabase
+      .from('projetos')
+      .update({ status: novoStatus })
+      .eq('id', id);
+
+    if (error) alert(`Erro ao atualizar status: ${error.message}`);
+    else {
+      setProjetos(projetos.map((p) => (p.id === id ? { ...p, status: novoStatus } : p)));
+    }
+  }
+
+  // FILTROS
   const projetosFiltrados = projetos.filter((prj) => {
     const textoMatch =
       prj.numero_projeto.toLowerCase().includes(filtroBusca.toLowerCase()) ||
@@ -145,20 +218,42 @@ export default function AdminPage() {
     return textoMatch && statusMatch;
   });
 
+  const clientesFiltrados = clientes.filter((c) =>
+    c.nome.toLowerCase().includes(buscaCliente.toLowerCase()) ||
+    c.email?.toLowerCase().includes(buscaCliente.toLowerCase())
+  );
+
+  const motoristasFiltrados = motoristas.filter((m) =>
+    m.nome.toLowerCase().includes(buscaMotorista.toLowerCase())
+  );
+
   return (
+<<<<<<< HEAD
     <div className="max-w-5xl mx-auto my-4 p-4 sm:p-6 bg-white rounded-xl shadow border space-y-6">
       
       {/* CABEÇALHO COM LOGO PROFISSIONAL */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b">
+=======
+    <div className="max-w-5xl mx-auto my-6 p-4 sm:p-8 bg-white rounded-2xl shadow-sm border border-slate-200 space-y-6">
+      
+      {/* CABEÇALHO */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-5 border-b border-slate-100">
+>>>>>>> 446e0c1 (Atualizacao JL IT - Layout e novas funcionalidades)
         <div className="flex items-center gap-3">
           <img 
             src="watermarked_img_9035154237853069771.jpg" 
             alt="Sistema Pro Logo" 
             className="h-10 w-auto object-contain rounded"
           />
+<<<<<<< HEAD
           <div className="border-l pl-3 border-gray-200">
             <h1 className="text-xl sm:text-2xl font-bold text-gray-800">Painel Administrativo</h1>
             <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
+=======
+          <div className="border-l pl-3 border-slate-200">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">Painel Administrativo</h1>
+            <span className="text-[11px] font-semibold text-slate-800 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200">
+>>>>>>> 446e0c1 (Atualizacao JL IT - Layout e novas funcionalidades)
               Perfil: Administrador
             </span>
           </div>
@@ -166,139 +261,276 @@ export default function AdminPage() {
 
         <button
           onClick={handleLogout}
-          className="text-xs font-medium bg-red-50 text-red-600 hover:bg-red-100 px-3 py-1.5 rounded transition border border-red-200"
+          className="text-xs font-semibold bg-slate-50 text-slate-600 hover:bg-red-50 hover:text-red-600 hover:border-red-200 px-3.5 py-2 rounded-lg transition border border-slate-200 shadow-2xs"
         >
           🚪 Sair
         </button>
       </div>
 
-      {/* Navegação por Abas */}
-      <div className="flex border-b gap-2 overflow-x-auto">
-        {(['projeto', 'cliente', 'motorista'] as const).map((abaNome) => (
+      {/* NAVEGAÇÃO POR ABAS */}
+      <div className="flex bg-slate-100/80 p-1 rounded-xl gap-1 overflow-x-auto border border-slate-200/60">
+        {[
+          { id: 'projeto', label: '➕ Novo Projeto' },
+          { id: 'cliente', label: '➕ Cadastrar Cliente' },
+          { id: 'motorista', label: '➕ Cadastrar Motorista' },
+          { id: 'consultar_clientes', label: '👥 Consultar Clientes' },
+          { id: 'consultar_motoristas', label: '🚚 Consultar Motoristas' },
+        ].map((item) => (
           <button
-            key={abaNome}
-            onClick={() => { setAba(abaNome); setMensagem(''); }}
-            className={`pb-2 px-3 sm:px-4 text-xs sm:text-sm font-semibold capitalize whitespace-nowrap transition ${
-              aba === abaNome ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'
+            key={item.id}
+            onClick={() => { setAba(item.id as any); setMensagem(''); }}
+            className={`py-2 px-3 text-xs font-semibold rounded-lg transition-all duration-150 whitespace-nowrap ${
+              aba === item.id 
+                ? 'bg-slate-900 text-white shadow-sm font-bold' 
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
             }`}
           >
-            {abaNome === 'projeto' ? 'Novo Projeto' : `Cadastrar ${abaNome}`}
+            {item.label}
           </button>
         ))}
       </div>
 
       {mensagem && (
-        <div className="p-3 bg-blue-50 text-blue-700 rounded text-sm font-medium">
-          {mensagem}
+        <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg text-xs font-medium flex items-center gap-2">
+          <span>✅</span> {mensagem}
         </div>
       )}
 
-      {/* Formulários */}
-      {aba === 'projeto' && (
-        <form onSubmit={handleCadastrarProjeto} className="space-y-3 max-w-xl">
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Número do Projeto</label>
-            <input
-              type="text"
-              required
-              placeholder="Ex: PRJ-2026-101"
-              value={numeroProjeto}
-              onChange={(e) => setNumeroProjeto(e.target.value)}
-              className="w-full p-2 border rounded text-sm text-black outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Cliente</label>
-            <select
-              value={clienteId}
-              onChange={(e) => setClienteId(e.target.value)}
-              className="w-full p-2 border rounded text-sm text-black outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Selecione o Cliente...</option>
-              {clientes.map((c) => (
-                <option key={c.id} value={c.id}>{c.nome}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Motorista</label>
-            <select
-              value={motoristaId}
-              onChange={(e) => setMotoristaId(e.target.value)}
-              className="w-full p-2 border rounded text-sm text-black outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Selecione o Motorista...</option>
-              {motoristas.map((m) => (
-                <option key={m.id} value={m.id}>{m.nome}</option>
-              ))}
-            </select>
-          </div>
-          <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded text-sm font-medium hover:bg-blue-700">
-            Criar Projeto
-          </button>
-        </form>
-      )}
+      {/* FORMULÁRIOS E CONSULTAS */}
+      <div className="bg-slate-50/50 p-4 sm:p-5 rounded-xl border border-slate-200/80">
+        
+        {/* ABA: NOVO PROJETO */}
+        {aba === 'projeto' && (
+          <form onSubmit={handleCadastrarProjeto} className="space-y-4 max-w-xl">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Número do Projeto</label>
+              <input
+                type="text"
+                required
+                placeholder="Ex: PRJ-2026-101"
+                value={numeroProjeto}
+                onChange={(e) => setNumeroProjeto(e.target.value)}
+                className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition"
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Cliente</label>
+                <select
+                  value={clienteId}
+                  onChange={(e) => setClienteId(e.target.value)}
+                  className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition"
+                >
+                  <option value="">Selecione o Cliente...</option>
+                  {clientes.map((c) => (
+                    <option key={c.id} value={c.id}>{c.nome}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Motorista</label>
+                <select
+                  value={motoristaId}
+                  onChange={(e) => setMotoristaId(e.target.value)}
+                  className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition"
+                >
+                  <option value="">Selecione o Motorista...</option>
+                  {motoristas.map((m) => (
+                    <option key={m.id} value={m.id}>{m.nome}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <button type="submit" className="w-full bg-slate-900 hover:bg-black text-white py-2.5 rounded-lg text-xs font-bold transition shadow-sm hover:shadow active:scale-[0.99]">
+              Criar Projeto
+            </button>
+          </form>
+        )}
 
-      {aba === 'cliente' && (
-        <form onSubmit={handleCadastrarCliente} className="space-y-3 max-w-xl">
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Nome do Cliente</label>
-            <input
-              type="text"
-              required
-              placeholder="Digite o nome do cliente"
-              value={nomeCliente}
-              onChange={(e) => setNomeCliente(e.target.value)}
-              className="w-full p-2 border rounded text-sm text-black outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded text-sm font-medium hover:bg-blue-700">
-            Salvar Cliente
-          </button>
-        </form>
-      )}
+        {/* ABA: CADASTRAR CLIENTE */}
+        {aba === 'cliente' && (
+          <form onSubmit={handleCadastrarCliente} className="space-y-4 max-w-xl">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Nome do Cliente</label>
+              <input
+                type="text"
+                required
+                placeholder="Ex: Empresa Silva Ltda"
+                value={nomeCliente}
+                onChange={(e) => setNomeCliente(e.target.value)}
+                className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition"
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">E-mail de Acesso</label>
+                <input
+                  type="email"
+                  required
+                  placeholder="cliente@empresa.com"
+                  value={emailCliente}
+                  onChange={(e) => setEmailCliente(e.target.value)}
+                  className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Senha de Acesso</label>
+                <input
+                  type="password"
+                  required
+                  placeholder="Senha do cliente"
+                  value={senhaCliente}
+                  onChange={(e) => setSenhaCliente(e.target.value)}
+                  className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition"
+                />
+              </div>
+            </div>
+            <button type="submit" className="w-full bg-slate-900 hover:bg-black text-white py-2.5 rounded-lg text-xs font-bold transition shadow-sm hover:shadow active:scale-[0.99]">
+              Cadastrar Cliente
+            </button>
+          </form>
+        )}
 
-      {aba === 'motorista' && (
-        <form onSubmit={handleCadastrarMotorista} className="space-y-3 max-w-xl">
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Nome do Motorista</label>
-            <input
-              type="text"
-              required
-              placeholder="Digite o nome do motorista"
-              value={nomeMotorista}
-              onChange={(e) => setNomeMotorista(e.target.value)}
-              className="w-full p-2 border rounded text-sm text-black outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded text-sm font-medium hover:bg-blue-700">
-            Salvar Motorista
-          </button>
-        </form>
-      )}
+        {/* ABA: CADASTRAR MOTORISTA */}
+        {aba === 'motorista' && (
+          <form onSubmit={handleCadastrarMotorista} className="space-y-4 max-w-xl">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Nome do Motorista</label>
+              <input
+                type="text"
+                required
+                placeholder="Digite o nome do motorista"
+                value={nomeMotorista}
+                onChange={(e) => setNomeMotorista(e.target.value)}
+                className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition"
+              />
+            </div>
+            <button type="submit" className="w-full bg-slate-900 hover:bg-black text-white py-2.5 rounded-lg text-xs font-bold transition shadow-sm hover:shadow active:scale-[0.99]">
+              Salvar Motorista
+            </button>
+          </form>
+        )}
 
-      {/* Tabela de Projetos + Filtros */}
-      <div className="border-t pt-6 space-y-4">
+        {/* ABA: CONSULTAR CLIENTES */}
+        {aba === 'consultar_clientes' && (
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+              <h2 className="text-sm font-bold text-slate-800">Clientes Cadastrados ({clientesFiltrados.length})</h2>
+              <input
+                type="text"
+                placeholder="🔍 Buscar por nome ou e-mail..."
+                value={buscaCliente}
+                onChange={(e) => setBuscaCliente(e.target.value)}
+                className="w-full sm:w-72 p-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-800 outline-none focus:ring-2 focus:ring-slate-900"
+              />
+            </div>
+
+            {clientesFiltrados.length === 0 ? (
+              <p className="text-xs text-slate-500 py-4 text-center">Nenhum cliente encontrado.</p>
+            ) : (
+              <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px]">
+                      <th className="p-3">Nome / Razão Social</th>
+                      <th className="p-3">E-mail de Acesso</th>
+                      <th className="p-3 text-center">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {clientesFiltrados.map((cli) => (
+                      <tr key={cli.id} className="hover:bg-slate-50 transition">
+                        <td className="p-3 font-semibold text-slate-900">{cli.nome}</td>
+                        <td className="p-3 text-slate-600">{cli.email || '—'}</td>
+                        <td className="p-3 text-center">
+                          <button
+                            onClick={() => handleExcluirCliente(cli.id, cli.nome)}
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded transition"
+                            title="Excluir Cliente"
+                          >
+                            🗑️
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ABA: CONSULTAR MOTORISTAS */}
+        {aba === 'consultar_motoristas' && (
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+              <h2 className="text-sm font-bold text-slate-800">Motoristas Cadastrados ({motoristasFiltrados.length})</h2>
+              <input
+                type="text"
+                placeholder="🔍 Buscar por nome do motorista..."
+                value={buscaMotorista}
+                onChange={(e) => setBuscaMotorista(e.target.value)}
+                className="w-full sm:w-72 p-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-800 outline-none focus:ring-2 focus:ring-slate-900"
+              />
+            </div>
+
+            {motoristasFiltrados.length === 0 ? (
+              <p className="text-xs text-slate-500 py-4 text-center">Nenhum motorista encontrado.</p>
+            ) : (
+              <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px]">
+                      <th className="p-3">Nome do Motorista</th>
+                      <th className="p-3 text-center">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {motoristasFiltrados.map((mot) => (
+                      <tr key={mot.id} className="hover:bg-slate-50 transition">
+                        <td className="p-3 font-semibold text-slate-900">{mot.nome}</td>
+                        <td className="p-3 text-center">
+                          <button
+                            onClick={() => handleExcluirMotorista(mot.id, mot.nome)}
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded transition"
+                            title="Excluir Motorista"
+                          >
+                            🗑️
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+      </div>
+
+      {/* TABELA PRINCIPAL DE PROJETOS E FILTROS */}
+      <div className="pt-2 space-y-4">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-          <h2 className="text-lg font-bold text-gray-800">Projetos Cadastrados</h2>
-          <button onClick={carregarDados} className="text-xs text-blue-600 hover:text-blue-800 underline">
-            🔄 Atualizar
+          <h2 className="text-base font-bold text-slate-800">Projetos Cadastrados</h2>
+          <button onClick={carregarDados} className="text-xs text-slate-900 hover:text-black font-semibold flex items-center gap-1 transition underline">
+            🔄 Atualizar Tabela
           </button>
         </div>
 
-        {/* Filtros */}
+        {/* BARRA DE FILTROS DE PROJETOS */}
         <div className="flex flex-col sm:flex-row gap-2">
           <input
             type="text"
             placeholder="🔍 Buscar por projeto, cliente ou motorista..."
             value={filtroBusca}
             onChange={(e) => setFiltroBusca(e.target.value)}
-            className="flex-1 p-2 border rounded text-xs text-black outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 p-2.5 border border-slate-200 rounded-lg text-xs text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition"
           />
           <select
             value={filtroStatus}
             onChange={(e) => setFiltroStatus(e.target.value)}
-            className="p-2 border rounded text-xs text-black outline-none focus:ring-2 focus:ring-blue-500"
+            className="p-2.5 border border-slate-200 rounded-lg text-xs text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition"
           >
             <option value="todos">Todos os Status</option>
             <option value="pendente">Pendente</option>
@@ -306,72 +538,106 @@ export default function AdminPage() {
           </select>
         </div>
 
-        {/* Lista de Projetos */}
+        {/* LISTA E TABELA DE PROJETOS */}
         {carregando ? (
-          <p className="text-xs text-gray-500">Carregando...</p>
+          <p className="text-xs text-slate-500 py-4 text-center">Carregando dados...</p>
         ) : projetosFiltrados.length === 0 ? (
-          <p className="text-xs text-gray-500">Nenhum projeto encontrado.</p>
+          <p className="text-xs text-slate-500 py-6 text-center border rounded-lg border-dashed">Nenhum projeto encontrado.</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse border text-xs">
+          <div className="overflow-x-auto rounded-xl border border-slate-200">
+            <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="bg-slate-100 text-slate-700 font-semibold uppercase">
-                  <th className="p-2.5 border">Projeto</th>
-                  <th className="p-2.5 border">Cliente</th>
-                  <th className="p-2.5 border">Motorista</th>
-                  <th className="p-2.5 border text-center">Status</th>
-                  <th className="p-2.5 border text-center">Comprovante</th>
-                  <th className="p-2.5 border text-center">GPS</th>
+                <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[10px]">
+                  <th className="p-3">Projeto</th>
+                  <th className="p-3">Cliente</th>
+                  <th className="p-3">Motorista</th>
+                  <th className="p-3 text-center">Status</th>
+                  <th className="p-3 text-center">Comprovante</th>
+                  <th className="p-3 text-center">GPS</th>
+                  <th className="p-3 text-center">Ações</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-slate-100 bg-white">
                 {projetosFiltrados.map((prj) => (
-                  <tr key={prj.id} className="hover:bg-slate-50">
-                    <td className="p-2.5 border font-semibold text-slate-800">{prj.numero_projeto}</td>
-                    <td className="p-2.5 border text-slate-700">{prj.clientes?.nome || '—'}</td>
-                    <td className="p-2.5 border text-slate-700">{prj.motoristas?.nome || '—'}</td>
-                    <td className="p-2.5 border text-center">
-                      <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                        prj.status === 'entregue' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {prj.status}
-                      </span>
+                  <tr key={prj.id} className="hover:bg-slate-50/80 transition">
+                    <td className="p-3 font-semibold text-slate-900">{prj.numero_projeto}</td>
+                    <td className="p-3 text-slate-600">{prj.clientes?.nome || '—'}</td>
+                    <td className="p-3 text-slate-600">{prj.motoristas?.nome || '—'}</td>
+                    <td className="p-3 text-center">
+                      <select
+                        value={prj.status}
+                        onChange={(e) => handleAlterarStatus(prj.id, e.target.value)}
+                        className={`text-[10px] font-bold uppercase py-1 px-2 rounded-full border cursor-pointer outline-none transition ${
+                          prj.status === 'entregue'
+                            ? 'bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-200'
+                            : 'bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-200'
+                        }`}
+                      >
+                        <option value="pendente">Pendente</option>
+                        <option value="entregue">Entregue</option>
+                      </select>
                     </td>
 
+<<<<<<< HEAD
                     {/* MINIATURA DO COMPROVANTE */}
                     <td className="p-2.5 border text-center align-middle">
+=======
+                    <td className="p-3 text-center align-middle">
+>>>>>>> 446e0c1 (Atualizacao JL IT - Layout e novas funcionalidades)
                       {prj.comprovante_url ? (
                         <a 
                           href={prj.comprovante_url} 
                           target="_blank" 
                           rel="noreferrer" 
+<<<<<<< HEAD
                           className="inline-block hover:opacity-80 transition"
+=======
+                          className="inline-block hover:scale-105 transition transform"
+>>>>>>> 446e0c1 (Atualizacao JL IT - Layout e novas funcionalidades)
                           title="Clique para abrir foto inteira"
                         >
                           <img 
                             src={prj.comprovante_url} 
                             alt="Comprovante" 
+<<<<<<< HEAD
                             className="w-10 h-10 object-cover rounded border shadow-sm mx-auto" 
+=======
+                            className="w-9 h-9 object-cover rounded-md border border-slate-200 shadow-2xs mx-auto" 
+>>>>>>> 446e0c1 (Atualizacao JL IT - Layout e novas funcionalidades)
                           />
                         </a>
                       ) : (
-                        <span className="text-gray-400">—</span>
+                        <span className="text-slate-400">—</span>
                       )}
                     </td>
 
+<<<<<<< HEAD
                     <td className="p-2.5 border text-center">
+=======
+                    <td className="p-3 text-center">
+>>>>>>> 446e0c1 (Atualizacao JL IT - Layout e novas funcionalidades)
                       {prj.latitude && prj.longitude ? (
                         <a
                           href={`https://www.google.com/maps?q=${prj.latitude},${prj.longitude}`}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-green-700 underline font-medium"
+                          className="text-emerald-700 hover:text-emerald-900 font-semibold underline text-[11px]"
                         >
                           📍 Ver Mapa
                         </a>
                       ) : (
-                        <span className="text-gray-400">—</span>
+                        <span className="text-slate-400">—</span>
                       )}
+                    </td>
+
+                    <td className="p-3 text-center">
+                      <button
+                        onClick={() => handleExcluirProjeto(prj.id, prj.numero_projeto)}
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1.5 rounded-md transition"
+                        title="Excluir Projeto"
+                      >
+                        🗑️
+                      </button>
                     </td>
                   </tr>
                 ))}
