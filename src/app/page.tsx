@@ -1,11 +1,10 @@
 'use client';
 
-
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-// ... restante do código mantido igual
+// ... restante do arquivo permanece idêntico
 
 interface Cliente {
   id: string;
@@ -101,14 +100,16 @@ export default function AdminPage() {
   const [mensagem, setMensagem] = useState('');
   const [carregando, setCarregando] = useState(false);
 
-  useEffect(() => {
+ useEffect(() => {
+  if (typeof window !== 'undefined') {
     const role = localStorage.getItem('user_role');
     if (role !== 'admin') {
       window.location.href = '/login';
       return;
     }
     carregarDados();
-  }, []);
+  }
+}, []);
 
   function handleLogout() {
     localStorage.removeItem('user_role');
