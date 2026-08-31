@@ -79,78 +79,90 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4 font-sans antialiased selection:bg-emerald-500 selection:text-slate-950">
-      <div className="max-w-md w-full bg-slate-900/80 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-800 p-6 sm:p-8 space-y-6">
-        
-        {/* CABEÇALHO */}
-        <div className="text-center space-y-1">
-          <h1 className="text-2xl font-black text-white tracking-wider">
-            JL IT
-          </h1>
-          <p className="text-xs font-semibold text-emerald-400">
-            Portal de Gestão de Entregas & Projetos
-          </p>
-        </div>
-
-        {/* MENSAGEM DE ERRO */}
-        {erro && (
-          <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-400 rounded-xl text-xs font-semibold text-center backdrop-blur-md">
-            ⚠️ {erro}
-          </div>
-        )}
-
-        {/* FORMULÁRIO */}
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div>
-            <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-              Usuário / E-mail / Nome
-            </label>
-            <input
-              type="text"
-              required
-              placeholder="Digite suas credenciais"
-              value={identificador}
-              onChange={(e) => setIdentificador(e.target.value)}
-              className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-600 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition shadow-inner"
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between p-4 font-sans antialiased selection:bg-emerald-500 selection:text-slate-950">
+      
+      {/* CONTEÚDO CENTRAL */}
+      <div className="flex-1 flex items-center justify-center my-8">
+        <div className="max-w-md w-full bg-slate-900/80 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-800 p-6 sm:p-8 space-y-6">
+          
+          {/* CABEÇALHO COM LOGO BBOX */}
+          <div className="text-center space-y-2 flex flex-col items-center">
+            <img 
+              src="BBox.png" 
+              alt="Logo Black Box" 
+              className="h-12 w-auto object-contain rounded-xl border border-slate-800 bg-slate-950 p-1.5 shadow-md mb-1"
             />
+            <div>
+              <h1 className="text-2xl font-black text-white tracking-wider">
+                
+              </h1>
+              <p className="text-xs font-semibold text-emerald-400">
+                Portal de Gestão de Entregas & Projetos
+              </p>
+            </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-              Senha
-            </label>
-            <input
-              type="password"
-              required
-              placeholder="••••••••"
-              value={senha}
-              onChange={(e) => setSenha(e.target.value)}
-              className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-600 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition shadow-inner"
-            />
-          </div>
+          {/* MENSAGEM DE ERRO */}
+          {erro && (
+            <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-400 rounded-xl text-xs font-semibold text-center backdrop-blur-md">
+              ⚠️ {erro}
+            </div>
+          )}
 
-          <button
-            type="submit"
-            disabled={carregando}
-            className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black py-3.5 rounded-xl text-xs uppercase tracking-wider transition-all shadow-lg active:scale-[0.99] disabled:opacity-50 mt-2"
-          >
-            {carregando ? 'Acessando Sistema...' : 'Entrar no Sistema'}
-          </button>
-        </form>
+          {/* FORMULÁRIO */}
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                Usuário / E-mail / Nome
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="Digite suas credenciais"
+                value={identificador}
+                onChange={(e) => setIdentificador(e.target.value)}
+                className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-600 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition shadow-inner"
+              />
+            </div>
 
-        {/* LOGO NA PARTE DE BAIXO + RODAPÉ */}
-        <div className="text-center pt-4 border-t border-slate-800/80 space-y-3">
-          <img 
-            src="LOGO.jpg" 
-            alt="Logo JL IT" 
-            className="h-12 w-auto mx-auto object-contain rounded-xl border border-slate-700/80 shadow-md p-1 bg-slate-900"
-          />
-          <p className="text-[11px] text-slate-500 font-medium">
-            &copy; {new Date().getFullYear()} JL IT — Todos os direitos reservados.
-          </p>
+            <div>
+              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                Senha
+              </label>
+              <input
+                type="password"
+                required
+                placeholder="••••••••"
+                value={senha}
+                onChange={(e) => setSenha(e.target.value)}
+                className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-600 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition shadow-inner"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={carregando}
+              className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black py-3.5 rounded-xl text-xs uppercase tracking-wider transition-all shadow-lg active:scale-[0.99] disabled:opacity-50 mt-2"
+            >
+              {carregando ? 'Acessando Sistema...' : 'Entrar no Sistema'}
+            </button>
+          </form>
+
         </div>
-
       </div>
+
+      {/* RODAPÉ COM LOGO EXPANDIDO EM ~15% (h-[28px]) */}
+      <footer className="w-full max-w-md mx-auto pt-4 border-t border-slate-800/80 flex items-center justify-center gap-3">
+        <img 
+          src="LOGO.jpg" 
+          alt="Logo JL IT" 
+          className="h-[35px] w-auto object-contain rounded border border-slate-700/80 bg-slate-900 p-0.5 shadow-sm"
+        />
+        <p className="text-[11px] text-slate-500 font-medium">
+          &copy; {new Date().getFullYear()} JL IT — Todos os direitos reservados.
+        </p>
+      </footer>
+
     </div>
   );
 }

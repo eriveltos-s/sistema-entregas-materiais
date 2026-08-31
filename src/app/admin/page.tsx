@@ -427,8 +427,8 @@ export default function AdminPage() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900/60 p-5 rounded-2xl border border-slate-800 backdrop-blur-md shadow-xl">
           <div className="flex items-center gap-4">
             <img 
-              src="LOGO.jpg" 
-              alt="Logo JL IT" 
+              src="BBox.png" 
+              alt="Logo Black Box" 
               className="h-11 w-auto object-contain rounded-lg border border-slate-700/80 shadow-md p-1 bg-slate-900"
             />
             <div className="border-l border-slate-800 pl-4">
