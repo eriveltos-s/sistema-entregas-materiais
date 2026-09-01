@@ -4,7 +4,6 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-// ... restante do arquivo permanece idêntico
 
 interface Cliente {
   id: string;
@@ -44,14 +43,12 @@ export default function AdminPage() {
     'projeto' | 'cliente' | 'motorista' | 'consultar_clientes' | 'consultar_motoristas'
   >('projeto');
 
-  // Formulários de Cadastro
   const [nomeCliente, setNomeCliente] = useState('');
   const [emailCliente, setEmailCliente] = useState('');
   const [senhaCliente, setSenhaCliente] = useState('');
 
   const [nomeMotorista, setNomeMotorista] = useState('');
-  
-  // Campos do Projeto
+
   const [numeroProjeto, setNumeroProjeto] = useState('');
   const [poCliente, setPoCliente] = useState('');
   const [poBlackbox, setPoBlackbox] = useState('');
@@ -60,17 +57,14 @@ export default function AdminPage() {
   const [clienteId, setClienteId] = useState('');
   const [motoristaId, setMotoristaId] = useState('');
 
-  // Edição de Cliente na Tabela
   const [clienteEditandoId, setClienteEditandoId] = useState<string | null>(null);
   const [editNomeCliente, setEditNomeCliente] = useState('');
   const [editEmailCliente, setEditEmailCliente] = useState('');
   const [editSenhaCliente, setEditSenhaCliente] = useState('');
 
-  // Edição de Motorista na Tabela
   const [motoristaEditandoId, setMotoristaEditandoId] = useState<string | null>(null);
   const [editNomeMotorista, setEditNomeMotorista] = useState('');
 
-  // Edição de Projeto na Tabela
   const [projetoEditandoId, setProjetoEditandoId] = useState<string | null>(null);
   const [editNumeroProjeto, setEditNumeroProjeto] = useState('');
   const [editPoCliente, setEditPoCliente] = useState('');
@@ -80,10 +74,8 @@ export default function AdminPage() {
   const [editClienteIdProjeto, setEditClienteIdProjeto] = useState('');
   const [editMotoristaIdProjeto, setEditMotoristaIdProjeto] = useState('');
 
-  // Modal Lightbox
   const [modalImagemUrl, setModalImagemUrl] = useState<string | null>(null);
 
-  // Filtros Avançados
   const [filtroBusca, setFiltroBusca] = useState('');
   const [filtroStatus, setFiltroStatus] = useState('todos');
   const [dataInicio, setDataInicio] = useState('');
@@ -92,24 +84,23 @@ export default function AdminPage() {
   const [buscaCliente, setBuscaCliente] = useState('');
   const [buscaMotorista, setBuscaMotorista] = useState('');
 
-  // Listas
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [motoristas, setMotoristas] = useState<Motorista[]>([]);
   const [projetos, setProjetos] = useState<Projeto[]>([]);
-  
+
   const [mensagem, setMensagem] = useState('');
   const [carregando, setCarregando] = useState(false);
 
- useEffect(() => {
-  if (typeof window !== 'undefined') {
-    const role = localStorage.getItem('user_role');
-    if (role !== 'admin') {
-      window.location.href = '/login';
-      return;
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const role = localStorage.getItem('user_role');
+      if (role !== 'admin') {
+        window.location.href = '/login';
+        return;
+      }
+      carregarDados();
     }
-    carregarDados();
-  }
-}, []);
+  }, []);
 
   function handleLogout() {
     localStorage.removeItem('user_role');
@@ -143,11 +134,9 @@ export default function AdminPage() {
     setCarregando(false);
   }
 
-  // CADASTRAR CLIENTE
   async function handleCadastrarCliente(e: React.FormEvent) {
     e.preventDefault();
     setMensagem('');
-
     const { error } = await supabase.from('clientes').insert([
       { 
         nome: nomeCliente,
@@ -167,7 +156,6 @@ export default function AdminPage() {
     }
   }
 
-  // EDIÇÃO DE CLIENTE
   function handleIniciarEdicaoCliente(cli: Cliente) {
     setClienteEditandoId(cli.id);
     setEditNomeCliente(cli.nome);
@@ -194,7 +182,6 @@ export default function AdminPage() {
     }
   }
 
-  // CADASTRAR MOTORISTA
   async function handleCadastrarMotorista(e: React.FormEvent) {
     e.preventDefault();
     setMensagem('');
@@ -207,7 +194,6 @@ export default function AdminPage() {
     }
   }
 
-  // EDIÇÃO DE MOTORISTA
   function handleIniciarEdicaoMotorista(mot: Motorista) {
     setMotoristaEditandoId(mot.id);
     setEditNomeMotorista(mot.nome);
@@ -233,7 +219,6 @@ export default function AdminPage() {
     }
   }
 
-  // CADASTRAR PROJETO
   async function handleCadastrarProjeto(e: React.FormEvent) {
     e.preventDefault();
     setMensagem('');
@@ -263,7 +248,6 @@ export default function AdminPage() {
     }
   }
 
-  // EDIÇÃO DE PROJETO
   function handleIniciarEdicaoProjeto(prj: Projeto) {
     setProjetoEditandoId(prj.id);
     setEditNumeroProjeto(prj.numero_projeto);
@@ -298,7 +282,6 @@ export default function AdminPage() {
     }
   }
 
-  // EXCLUSÕES
   async function handleExcluirCliente(id: string, nome: string) {
     if (!confirm(`Tem certeza que deseja excluir o cliente "${nome}"?`)) return;
     const { error } = await supabase.from('clientes').delete().eq('id', id);
@@ -329,7 +312,6 @@ export default function AdminPage() {
     }
   }
 
-  // FILTRAGEM AVANÇADA POR TEXTO, STATUS E DATAS
   const projetosFiltrados = projetos.filter((prj) => {
     const textoMatch =
       prj.numero_projeto.toLowerCase().includes(filtroBusca.toLowerCase()) ||
@@ -355,7 +337,6 @@ export default function AdminPage() {
     return textoMatch && statusMatch && dataMatch;
   });
 
-  // EXPORTAÇÃO EXCEL (.CSV)
   function handleExportarExcel() {
     if (projetosFiltrados.length === 0) {
       alert('Nenhum dado para exportar.');
@@ -386,7 +367,6 @@ export default function AdminPage() {
     document.body.removeChild(link);
   }
 
-  // EXPORTAÇÃO PDF DINÂMICA
   async function handleExportarPDF() {
     if (projetosFiltrados.length === 0) {
       alert('Nenhum dado para exportar.');
@@ -444,16 +424,16 @@ export default function AdminPage() {
   const taxaEntrega = totalProjetos > 0 ? Math.round((entregues / totalProjetos) * 100) : 0;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-8 font-sans antialiased selection:bg-emerald-500 selection:text-slate-950">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-8 font-sans antialiased selection:bg-emerald-500 selection:text-slate-950 flex flex-col justify-between">
+      <div className="max-w-7xl mx-auto space-y-8 w-full">
         
-        {/* CABEÇALHO */}
+        {/* CABEÇALHO COM LOGO BBOX */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900/60 p-5 rounded-2xl border border-slate-800 backdrop-blur-md shadow-xl">
           <div className="flex items-center gap-4">
             <img 
-              src="LOGO.jpg" 
-              alt="Logo JL IT" 
-              className="h-11 w-auto object-contain rounded-lg border border-slate-700/80 shadow-md p-1 bg-slate-900"
+              src="BBox.png" 
+              alt="Logo Black Box" 
+              className="h-12 w-auto object-contain rounded-xl border border-slate-700/80 shadow-md p-1.5 bg-slate-900"
             />
             <div className="border-l border-slate-800 pl-4">
               <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">JL IT — Painel Administrativo</h1>
@@ -472,7 +452,7 @@ export default function AdminPage() {
           </button>
         </div>
 
-        {/* CARDS DE ESTATÍSTICAS (KPIs) */}
+        {/* ESTATÍSTICAS */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div className="bg-slate-900/80 border border-slate-800/80 p-5 rounded-2xl shadow-lg relative overflow-hidden group">
             <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Total Projetos</p>
@@ -501,7 +481,7 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* NAVEGAÇÃO POR ABAS */}
+        {/* NAVEGAÇÃO */}
         <div className="flex bg-slate-900/80 p-1.5 rounded-2xl gap-1.5 overflow-x-auto border border-slate-800 shadow-inner">
           {[
             { id: 'projeto', label: '⚡ Novo Projeto' },
@@ -538,8 +518,6 @@ export default function AdminPage() {
 
         {/* FORMULÁRIOS E CONSULTAS */}
         <div className="bg-slate-900/60 p-6 rounded-2xl border border-slate-800/90 shadow-xl backdrop-blur-md">
-          
-          {/* ABA: NOVO PROJETO */}
           {aba === 'projeto' && (
             <form onSubmit={handleCadastrarProjeto} className="space-y-4 max-w-3xl">
               <h2 className="text-sm font-bold text-slate-200 uppercase tracking-wider mb-2">Cadastrar Novo Projeto</h2>
@@ -639,7 +617,6 @@ export default function AdminPage() {
             </form>
           )}
 
-          {/* ABA: CADASTRAR CLIENTE */}
           {aba === 'cliente' && (
             <form onSubmit={handleCadastrarCliente} className="space-y-4 max-w-xl">
               <h2 className="text-sm font-bold text-slate-200 uppercase tracking-wider mb-2">Cadastrar Novo Cliente</h2>
@@ -684,7 +661,6 @@ export default function AdminPage() {
             </form>
           )}
 
-          {/* ABA: CADASTRAR MOTORISTA */}
           {aba === 'motorista' && (
             <form onSubmit={handleCadastrarMotorista} className="space-y-4 max-w-xl">
               <h2 className="text-sm font-bold text-slate-200 uppercase tracking-wider mb-2">Cadastrar Novo Motorista</h2>
@@ -705,7 +681,6 @@ export default function AdminPage() {
             </form>
           )}
 
-          {/* ABA: CONSULTAR CLIENTES */}
           {aba === 'consultar_clientes' && (
             <div className="space-y-4">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
@@ -773,7 +748,6 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* ABA: CONSULTAR MOTORISTAS */}
           {aba === 'consultar_motoristas' && (
             <div className="space-y-4">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
@@ -831,12 +805,10 @@ export default function AdminPage() {
 
         </div>
 
-        {/* BARRA DE FILTROS AVANÇADOS E BOTÕES DE EXPORTAÇÃO */}
+        {/* TABELA DE PROJETOS E FILTROS */}
         <div className="space-y-4 pt-2">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <h2 className="text-base font-bold text-white tracking-tight">Projetos & Acompanhamento de Entregas</h2>
-            
-            {/* BOTÕES DE EXPORTAÇÃO */}
             <div className="flex items-center gap-2">
               <button 
                 onClick={handleExportarExcel}
@@ -856,7 +828,6 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {/* PAINEL DE FILTROS COM BUSCA + DATA INÍCIO E DATA FIM */}
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
             <div className="sm:col-span-2">
               <label className="block text-[11px] font-medium text-slate-400 mb-1">Buscar por Texto</label>
@@ -890,7 +861,6 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {/* TABELA PRINCIPAL DE PROJETOS */}
           {carregando ? (
             <p className="text-xs text-slate-500 py-8 text-center">Carregando dados...</p>
           ) : projetosFiltrados.length === 0 ? (
@@ -1023,7 +993,7 @@ export default function AdminPage() {
           )}
         </div>
 
-        {/* LIGHTBOX MODAL */}
+        {/* MODAL LIGHTBOX */}
         {modalImagemUrl && (
           <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
             <div className="relative max-w-3xl w-full bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl p-2">
@@ -1039,6 +1009,19 @@ export default function AdminPage() {
         )}
 
       </div>
+
+      {/* RODAPÉ COM LOGO.JPG AMPLIADO (+15%) */}
+      <footer className="w-full pt-8 mt-12 border-t border-slate-800/80 flex items-center justify-center gap-3">
+        <img 
+          src="LOGO.jpg" 
+          alt="Logo JL IT" 
+          className="h-[28px] w-auto object-contain rounded border border-slate-700/80 bg-slate-900 p-0.5 shadow-sm"
+        />
+        <p className="text-[11px] text-slate-500 font-medium">
+          &copy; {new Date().getFullYear()} JL IT — Todos os direitos reservados.
+        </p>
+      </footer>
+
     </div>
   );
 }

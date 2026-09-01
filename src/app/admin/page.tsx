@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 
@@ -90,12 +92,14 @@ export default function AdminPage() {
   const [carregando, setCarregando] = useState(false);
 
   useEffect(() => {
-    const role = localStorage.getItem('user_role');
-    if (role !== 'admin') {
-      window.location.href = '/login';
-      return;
+    if (typeof window !== 'undefined') {
+      const role = localStorage.getItem('user_role');
+      if (role !== 'admin') {
+        window.location.href = '/login';
+        return;
+      }
+      carregarDados();
     }
-    carregarDados();
   }, []);
 
   function handleLogout() {
@@ -420,16 +424,16 @@ export default function AdminPage() {
   const taxaEntrega = totalProjetos > 0 ? Math.round((entregues / totalProjetos) * 100) : 0;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-8 font-sans antialiased selection:bg-emerald-500 selection:text-slate-950">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-8 font-sans antialiased selection:bg-emerald-500 selection:text-slate-950 flex flex-col justify-between">
+      <div className="max-w-7xl mx-auto space-y-8 w-full">
         
-        {/* CABEÇALHO */}
+        {/* CABEÇALHO COM LOGO BBOX */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900/60 p-5 rounded-2xl border border-slate-800 backdrop-blur-md shadow-xl">
           <div className="flex items-center gap-4">
             <img 
               src="BBox.png" 
               alt="Logo Black Box" 
-              className="h-11 w-auto object-contain rounded-lg border border-slate-700/80 shadow-md p-1 bg-slate-900"
+              className="h-12 w-auto object-contain rounded-xl border border-slate-700/80 shadow-md p-1.5 bg-slate-900"
             />
             <div className="border-l border-slate-800 pl-4">
               <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">JL IT — Painel Administrativo</h1>
@@ -1005,6 +1009,19 @@ export default function AdminPage() {
         )}
 
       </div>
+
+      {/* RODAPÉ COM LOGO.JPG AMPLIADO (+15%) */}
+      <footer className="w-full pt-8 mt-12 border-t border-slate-800/80 flex items-center justify-center gap-3">
+        <img 
+          src="LOGO.jpg" 
+          alt="Logo JL IT" 
+          className="h-[28px] w-auto object-contain rounded border border-slate-700/80 bg-slate-900 p-0.5 shadow-sm"
+        />
+        <p className="text-[11px] text-slate-500 font-medium">
+          &copy; {new Date().getFullYear()} JL IT — Todos os direitos reservados.
+        </p>
+      </footer>
+
     </div>
   );
 }
