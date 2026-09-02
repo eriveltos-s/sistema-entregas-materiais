@@ -22,6 +22,7 @@ interface Motorista {
 interface Projeto {
   id: string;
   numero_projeto: string;
+  nome_projeto?: string | null;
   po_cliente?: string | null;
   po_blackbox?: string | null;
   numero_nf?: number | null;
@@ -50,6 +51,7 @@ export default function AdminPage() {
   const [nomeMotorista, setNomeMotorista] = useState('');
 
   const [numeroProjeto, setNumeroProjeto] = useState('');
+  const [nomeProjeto, setNomeProjeto] = useState('');
   const [poCliente, setPoCliente] = useState('');
   const [poBlackbox, setPoBlackbox] = useState('');
   const [numeroNf, setNumeroNf] = useState('');
@@ -67,6 +69,7 @@ export default function AdminPage() {
 
   const [projetoEditandoId, setProjetoEditandoId] = useState<string | null>(null);
   const [editNumeroProjeto, setEditNumeroProjeto] = useState('');
+  const [editNomeProjeto, setEditNomeProjeto] = useState('');
   const [editPoCliente, setEditPoCliente] = useState('');
   const [editPoBlackbox, setEditPoBlackbox] = useState('');
   const [editNumeroNf, setEditNumeroNf] = useState('');
@@ -115,7 +118,7 @@ export default function AdminPage() {
     const { data: pData } = await supabase
       .from('projetos')
       .select(`
-        id, numero_projeto, po_cliente, po_blackbox, numero_nf, pv, cliente_id, motorista_id, status, comprovante_url, created_at, entregue_em, latitude, longitude,
+        id, numero_projeto, nome_projeto, po_cliente, po_blackbox, numero_nf, pv, cliente_id, motorista_id, status, comprovante_url, created_at, entregue_em, latitude, longitude,
         clientes ( nome ),
         motoristas ( nome )
       `)
@@ -225,6 +228,7 @@ export default function AdminPage() {
     const { error } = await supabase.from('projetos').insert([
       {
         numero_projeto: numeroProjeto,
+        nome_projeto: nomeProjeto || null,
         po_cliente: poCliente || null,
         po_blackbox: poBlackbox || null,
         numero_nf: numeroNf ? parseInt(numeroNf) : null,
@@ -238,6 +242,7 @@ export default function AdminPage() {
     else {
       setMensagem('Projeto cadastrado com sucesso!');
       setNumeroProjeto('');
+      setNomeProjeto('');
       setPoCliente('');
       setPoBlackbox('');
       setNumeroNf('');
@@ -251,6 +256,7 @@ export default function AdminPage() {
   function handleIniciarEdicaoProjeto(prj: Projeto) {
     setProjetoEditandoId(prj.id);
     setEditNumeroProjeto(prj.numero_projeto);
+    setEditNomeProjeto(prj.nome_projeto || '');
     setEditPoCliente(prj.po_cliente || '');
     setEditPoBlackbox(prj.po_blackbox || '');
     setEditNumeroNf(prj.numero_nf ? String(prj.numero_nf) : '');
@@ -264,6 +270,7 @@ export default function AdminPage() {
       .from('projetos')
       .update({
         numero_projeto: editNumeroProjeto,
+        nome_projeto: editNomeProjeto || null,
         po_cliente: editPoCliente || null,
         po_blackbox: editPoBlackbox || null,
         numero_nf: editNumeroNf ? parseInt(editNumeroNf) : null,
@@ -315,6 +322,7 @@ export default function AdminPage() {
   const projetosFiltrados = projetos.filter((prj) => {
     const textoMatch =
       prj.numero_projeto.toLowerCase().includes(filtroBusca.toLowerCase()) ||
+      prj.nome_projeto?.toLowerCase().includes(filtroBusca.toLowerCase()) ||
       prj.po_cliente?.toLowerCase().includes(filtroBusca.toLowerCase()) ||
       prj.po_blackbox?.toLowerCase().includes(filtroBusca.toLowerCase()) ||
       String(prj.numero_nf || '').includes(filtroBusca) ||
@@ -343,9 +351,10 @@ export default function AdminPage() {
       return;
     }
 
-    const cabecalho = ['Projeto', 'PO Cliente', 'PO Blackbox', 'N NF', 'PV', 'Cliente', 'Motorista', 'Status', 'Entregue Em', 'Comprovante URL'];
+    const cabecalho = ['Número Projeto', 'Nome Projeto', 'PO Cliente', 'PO Blackbox', 'N NF', 'PV', 'Cliente', 'Motorista', 'Status', 'Entregue Em', 'Comprovante URL'];
     const linhas = projetosFiltrados.map((p) => [
       `"${p.numero_projeto}"`,
+      `"${p.nome_projeto || ''}"`,
       `"${p.po_cliente || ''}"`,
       `"${p.po_blackbox || ''}"`,
       `"${p.numero_nf || ''}"`,
@@ -387,6 +396,7 @@ export default function AdminPage() {
 
       const tableData = projetosFiltrados.map((p) => [
         p.numero_projeto,
+        p.nome_projeto || '—',
         p.po_cliente || '—',
         p.numero_nf || '—',
         p.clientes?.nome || '—',
@@ -397,7 +407,7 @@ export default function AdminPage() {
 
       autoTable(doc, {
         startY: 40,
-        head: [['Projeto', 'PO Cliente', 'Nº NF', 'Cliente', 'Motorista', 'Status', 'Data Entrega']],
+        head: [['Nº Projeto', 'Nome Projeto', 'PO Cliente', 'Nº NF', 'Cliente', 'Motorista', 'Status', 'Data Entrega']],
         body: tableData,
         theme: 'striped',
         headStyles: { fillColor: [16, 185, 129] },
@@ -522,6 +532,7 @@ export default function AdminPage() {
             <form onSubmit={handleCadastrarProjeto} className="space-y-4 max-w-3xl">
               <h2 className="text-sm font-bold text-slate-200 uppercase tracking-wider mb-2">Cadastrar Novo Projeto</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                
                 <div>
                   <label className="block text-xs font-medium text-slate-400 mb-1.5">Número do Projeto *</label>
                   <input
@@ -530,6 +541,18 @@ export default function AdminPage() {
                     placeholder="Ex: PRJ-2026-101"
                     value={numeroProjeto}
                     onChange={(e) => setNumeroProjeto(e.target.value)}
+                    className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white outline-none focus:border-emerald-500 transition"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-400 mb-1.5">Nome do Projeto (máx 80 chars)</label>
+                  <input
+                    type="text"
+                    maxLength={80}
+                    placeholder="Ex: Ampliação do Datacenter"
+                    value={nomeProjeto}
+                    onChange={(e) => setNomeProjeto(e.target.value)}
                     className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white outline-none focus:border-emerald-500 transition"
                   />
                 </div>
@@ -833,7 +856,7 @@ export default function AdminPage() {
               <label className="block text-[11px] font-medium text-slate-400 mb-1">Buscar por Texto</label>
               <input
                 type="text"
-                placeholder="🔍 Projeto, PO, NF, PV, cliente ou motorista..."
+                placeholder="🔍 Nº Projeto, Nome, PO, NF, PV, cliente ou motorista..."
                 value={filtroBusca}
                 onChange={(e) => setFiltroBusca(e.target.value)}
                 className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 outline-none focus:border-emerald-500"
@@ -870,7 +893,8 @@ export default function AdminPage() {
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="bg-slate-900 border-b border-slate-800 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
-                    <th className="p-3.5">Projeto</th>
+                    <th className="p-3.5">Nº Projeto</th>
+                    <th className="p-3.5">Nome do Projeto</th>
                     <th className="p-3.5">PO Cliente</th>
                     <th className="p-3.5">PO Blackbox</th>
                     <th className="p-3.5">Nº NF</th>
@@ -894,6 +918,12 @@ export default function AdminPage() {
                           {estaEditando ? (
                             <input type="text" value={editNumeroProjeto} onChange={(e) => setEditNumeroProjeto(e.target.value)} className="w-24 p-1 bg-slate-950 border border-slate-700 rounded text-xs text-white" />
                           ) : prj.numero_projeto}
+                        </td>
+
+                        <td className="p-3.5 text-slate-300">
+                          {estaEditando ? (
+                            <input type="text" maxLength={80} value={editNomeProjeto} onChange={(e) => setEditNomeProjeto(e.target.value)} className="w-32 p-1 bg-slate-950 border border-slate-700 rounded text-xs text-white" />
+                          ) : prj.nome_projeto || '—'}
                         </td>
 
                         <td className="p-3.5 text-slate-300">

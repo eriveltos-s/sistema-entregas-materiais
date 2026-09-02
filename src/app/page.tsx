@@ -22,6 +22,7 @@ interface Motorista {
 interface Projeto {
   id: string;
   numero_projeto: string;
+  nome_projeto?: string | null; // <--- NOVO CAMPO
   po_cliente?: string | null;
   po_blackbox?: string | null;
   numero_nf?: number | null;
@@ -48,8 +49,9 @@ export default function AdminPage() {
   const [senhaCliente, setSenhaCliente] = useState('');
 
   const [nomeMotorista, setNomeMotorista] = useState('');
-
+  const [nomeProjeto, setNomeProjeto] = useState('');
   const [numeroProjeto, setNumeroProjeto] = useState('');
+
   const [poCliente, setPoCliente] = useState('');
   const [poBlackbox, setPoBlackbox] = useState('');
   const [numeroNf, setNumeroNf] = useState('');
