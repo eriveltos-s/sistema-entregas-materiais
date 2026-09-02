@@ -35,8 +35,8 @@ interface Projeto {
   entregue_em: string | null;
   latitude: number | null;
   longitude: number | null;
-  clientes: { nome: string } | null;
-  motoristas: { nome: string } | null;
+  clientes?: { nome: string } | null;
+  motoristas?: { nome: string } | null;
 }
 
 export default function AdminPage() {
@@ -112,10 +112,25 @@ export default function AdminPage() {
 
   async function carregarDados() {
     setCarregando(true);
-    const { data: cData } = await supabase.from('clientes').select('id, nome, email, senha, created_at').order('nome');
-    const { data: mData } = await supabase.from('motoristas').select('id, nome, created_at').order('nome');
     
-    const { data: pData } = await supabase
+    // 1. Carrega Clientes
+    const { data: cData, error: cErr } = await supabase
+      .from('clientes')
+      .select('id, nome, email, senha, created_at')
+      .order('nome');
+    if (cData) setClientes(cData);
+    if (cErr) console.error('Erro ao buscar clientes:', cErr.message);
+
+    // 2. Carrega Motoristas
+    const { data: mData, error: mErr } = await supabase
+      .from('motoristas')
+      .select('id, nome, created_at')
+      .order('nome');
+    if (mData) setMotoristas(mData);
+    if (mErr) console.error('Erro ao buscar motoristas:', mErr.message);
+
+    // 3. Carrega Projetos
+    const { data: pData, error: pErr } = await supabase
       .from('projetos')
       .select(`
         id, numero_projeto, nome_projeto, po_cliente, po_blackbox, numero_nf, pv, cliente_id, motorista_id, status, comprovante_url, created_at, entregue_em, latitude, longitude,
@@ -124,8 +139,8 @@ export default function AdminPage() {
       `)
       .order('created_at', { ascending: false });
 
-    if (cData) setClientes(cData);
-    if (mData) setMotoristas(mData);
+    if (pErr) console.error('Erro ao buscar projetos:', pErr.message);
+
     if (pData) {
       const projetosFormatados: Projeto[] = pData.map((p: any) => ({
         ...p,
@@ -238,8 +253,10 @@ export default function AdminPage() {
         status: 'pendente',
       },
     ]);
-    if (error) setMensagem(`Erro: ${error.message}`);
-    else {
+
+    if (error) {
+      setMensagem(`Erro ao criar projeto: ${error.message}`);
+    } else {
       setMensagem('Projeto cadastrado com sucesso!');
       setNumeroProjeto('');
       setNomeProjeto('');
@@ -320,15 +337,17 @@ export default function AdminPage() {
   }
 
   const projetosFiltrados = projetos.filter((prj) => {
+    const busca = filtroBusca.toLowerCase().trim();
     const textoMatch =
-      prj.numero_projeto.toLowerCase().includes(filtroBusca.toLowerCase()) ||
-      prj.nome_projeto?.toLowerCase().includes(filtroBusca.toLowerCase()) ||
-      prj.po_cliente?.toLowerCase().includes(filtroBusca.toLowerCase()) ||
-      prj.po_blackbox?.toLowerCase().includes(filtroBusca.toLowerCase()) ||
-      String(prj.numero_nf || '').includes(filtroBusca) ||
-      prj.pv?.toLowerCase().includes(filtroBusca.toLowerCase()) ||
-      prj.clientes?.nome?.toLowerCase().includes(filtroBusca.toLowerCase()) ||
-      prj.motoristas?.nome?.toLowerCase().includes(filtroBusca.toLowerCase());
+      !busca ||
+      prj.numero_projeto?.toLowerCase().includes(busca) ||
+      prj.nome_projeto?.toLowerCase().includes(busca) ||
+      prj.po_cliente?.toLowerCase().includes(busca) ||
+      prj.po_blackbox?.toLowerCase().includes(busca) ||
+      String(prj.numero_nf || '').includes(busca) ||
+      prj.pv?.toLowerCase().includes(busca) ||
+      prj.clientes?.nome?.toLowerCase().includes(busca) ||
+      prj.motoristas?.nome?.toLowerCase().includes(busca);
 
     const statusMatch = filtroStatus === 'todos' || prj.status === filtroStatus;
 
@@ -353,7 +372,7 @@ export default function AdminPage() {
 
     const cabecalho = ['Número Projeto', 'Nome Projeto', 'PO Cliente', 'PO Blackbox', 'N NF', 'PV', 'Cliente', 'Motorista', 'Status', 'Entregue Em', 'Comprovante URL'];
     const linhas = projetosFiltrados.map((p) => [
-      `"${p.numero_projeto}"`,
+      `"${p.numero_projeto || ''}"`,
       `"${p.nome_projeto || ''}"`,
       `"${p.po_cliente || ''}"`,
       `"${p.po_blackbox || ''}"`,
@@ -361,7 +380,7 @@ export default function AdminPage() {
       `"${p.pv || ''}"`,
       `"${p.clientes?.nome || ''}"`,
       `"${p.motoristas?.nome || ''}"`,
-      `"${p.status.toUpperCase()}"`,
+      `"${(p.status || '').toUpperCase()}"`,
       `"${p.entregue_em ? new Date(p.entregue_em).toLocaleString('pt-BR') : ''}"`,
       `"${p.comprovante_url || ''}"`,
     ]);
@@ -395,13 +414,13 @@ export default function AdminPage() {
       doc.text(`Total de Registros: ${projetosFiltrados.length}`, 14, 34);
 
       const tableData = projetosFiltrados.map((p) => [
-        p.numero_projeto,
+        p.numero_projeto || '—',
         p.nome_projeto || '—',
         p.po_cliente || '—',
         p.numero_nf || '—',
         p.clientes?.nome || '—',
         p.motoristas?.nome || '—',
-        p.status.toUpperCase(),
+        (p.status || '').toUpperCase(),
         p.entregue_em ? new Date(p.entregue_em).toLocaleDateString('pt-BR') : '—',
       ]);
 
@@ -619,7 +638,7 @@ export default function AdminPage() {
                   </select>
                 </div>
 
-                <div className="sm:col-span-2">
+                <div>
                   <label className="block text-xs font-medium text-slate-400 mb-1.5">Motorista Designado</label>
                   <select
                     value={motoristaId}
