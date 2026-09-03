@@ -112,36 +112,31 @@ export default function AdminPage() {
 
   async function carregarDados() {
     setCarregando(true);
-    
-    // 1. Carrega Clientes
-    const { data: cData, error: cErr } = await supabase
-      .from('clientes')
-      .select('id, nome, email, senha, created_at')
-      .order('nome');
+
+    // 1. Busca Clientes
+    const { data: cData } = await supabase.from('clientes').select('*').order('nome');
     if (cData) setClientes(cData);
-    if (cErr) console.error('Erro ao buscar clientes:', cErr.message);
 
-    // 2. Carrega Motoristas
-    const { data: mData, error: mErr } = await supabase
-      .from('motoristas')
-      .select('id, nome, created_at')
-      .order('nome');
+    // 2. Busca Motoristas
+    const { data: mData } = await supabase.from('motoristas').select('*').order('nome');
     if (mData) setMotoristas(mData);
-    if (mErr) console.error('Erro ao buscar motoristas:', mErr.message);
 
-    // 3. Carrega Projetos
+    // 3. Busca Projetos (com fallback resiliente de relacionamento)
     const { data: pData, error: pErr } = await supabase
       .from('projetos')
       .select(`
-        id, numero_projeto, nome_projeto, po_cliente, po_blackbox, numero_nf, pv, cliente_id, motorista_id, status, comprovante_url, created_at, entregue_em, latitude, longitude,
+        *,
         clientes ( nome ),
         motoristas ( nome )
       `)
       .order('created_at', { ascending: false });
 
-    if (pErr) console.error('Erro ao buscar projetos:', pErr.message);
-
-    if (pData) {
+    if (pErr) {
+      console.error('Erro na busca completa, tentando busca simples:', pErr.message);
+      // Busca fallback sem relacionamentos para garantir que a tabela nao fique em branco
+      const { data: pSimples } = await supabase.from('projetos').select('*').order('created_at', { ascending: false });
+      if (pSimples) setProjetos(pSimples as any);
+    } else if (pData) {
       const projetosFormatados: Projeto[] = pData.map((p: any) => ({
         ...p,
         clientes: Array.isArray(p.clientes) ? p.clientes[0] : p.clientes,
@@ -149,6 +144,7 @@ export default function AdminPage() {
       }));
       setProjetos(projetosFormatados);
     }
+
     setCarregando(false);
   }
 
@@ -255,7 +251,7 @@ export default function AdminPage() {
     ]);
 
     if (error) {
-      setMensagem(`Erro ao criar projeto: ${error.message}`);
+      setMensagem(`Erro: ${error.message}`);
     } else {
       setMensagem('Projeto cadastrado com sucesso!');
       setNumeroProjeto('');
@@ -340,14 +336,14 @@ export default function AdminPage() {
     const busca = filtroBusca.toLowerCase().trim();
     const textoMatch =
       !busca ||
-      prj.numero_projeto?.toLowerCase().includes(busca) ||
-      prj.nome_projeto?.toLowerCase().includes(busca) ||
-      prj.po_cliente?.toLowerCase().includes(busca) ||
-      prj.po_blackbox?.toLowerCase().includes(busca) ||
+      (prj.numero_projeto && prj.numero_projeto.toLowerCase().includes(busca)) ||
+      (prj.nome_projeto && prj.nome_projeto.toLowerCase().includes(busca)) ||
+      (prj.po_cliente && prj.po_cliente.toLowerCase().includes(busca)) ||
+      (prj.po_blackbox && prj.po_blackbox.toLowerCase().includes(busca)) ||
       String(prj.numero_nf || '').includes(busca) ||
-      prj.pv?.toLowerCase().includes(busca) ||
-      prj.clientes?.nome?.toLowerCase().includes(busca) ||
-      prj.motoristas?.nome?.toLowerCase().includes(busca);
+      (prj.pv && prj.pv.toLowerCase().includes(busca)) ||
+      (prj.clientes?.nome && prj.clientes.nome.toLowerCase().includes(busca)) ||
+      (prj.motoristas?.nome && prj.motoristas.nome.toLowerCase().includes(busca));
 
     const statusMatch = filtroStatus === 'todos' || prj.status === filtroStatus;
 
@@ -631,7 +627,7 @@ export default function AdminPage() {
                     onChange={(e) => setClienteId(e.target.value)}
                     className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white outline-none focus:border-emerald-500 transition"
                   >
-                    <option value="">Selecione o Cliente...</option>
+                    <option value="">Selecione o Cliente ({clientes.length} disponíveis)...</option>
                     {clientes.map((c) => (
                       <option key={c.id} value={c.id}>{c.nome}</option>
                     ))}
@@ -645,7 +641,7 @@ export default function AdminPage() {
                     onChange={(e) => setMotoristaId(e.target.value)}
                     className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white outline-none focus:border-emerald-500 transition"
                   >
-                    <option value="">Selecione o Motorista...</option>
+                    <option value="">Selecione o Motorista ({motoristas.length} disponíveis)...</option>
                     {motoristas.map((m) => (
                       <option key={m.id} value={m.id}>{m.nome}</option>
                     ))}
@@ -1059,7 +1055,7 @@ export default function AdminPage() {
 
       </div>
 
-      {/* RODAPÉ COM LOGO.JPG AMPLIADO (+15%) */}
+      {/* RODAPÉ COM LOGO.JPG AMPLIADO */}
       <footer className="w-full pt-8 mt-12 border-t border-slate-800/80 flex items-center justify-center gap-3">
         <img 
           src="LOGO.jpg" 
