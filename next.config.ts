@@ -2,11 +2,11 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   typescript: {
-    // Permite concluir o build mesmo se houver avisos de tipagem
+    // Ignora erros de TypeScript no build para liberar o deploy na Vercel
     ignoreBuildErrors: true,
   },
   eslint: {
-    // Evita falha por regras estritas de sintaxe/formatação durante o deploy
+    // Ignora avisos do ESLint durante o build
     ignoreDuringBuilds: true,
   },
 };
