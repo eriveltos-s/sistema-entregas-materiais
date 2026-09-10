@@ -4,6 +4,17 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import dynamic from 'next/dynamic';
+
+// Carrega o componente do mapa apenas no cliente (desativa SSR)
+const MapaEntregas = dynamic(() => import('@/components/MapaEntregas'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-[450px] bg-slate-900 border border-slate-800 rounded-2xl flex items-center justify-center text-slate-500 text-xs">
+      Carregando mapa interativo...
+    </div>
+  ),
+});
 
 interface Cliente {
   id: string;
