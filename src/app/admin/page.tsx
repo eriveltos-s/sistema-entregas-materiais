@@ -3,11 +3,11 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
-import dynamicImport from 'next/dynamic';
+import nextDynamic from 'next/dynamic';
 import { supabase } from '@/lib/supabase';
 
-// Carregamento dinâmico do mapa para garantir compatibilidade com SSR do Next.js
-const MapaEntregas = dynamicImport(() => import('@/components/MapaEntregas'), {
+// Carregamento dinâmico do mapa sem conflito de identificadores
+const MapaEntregas = nextDynamic(() => import('@/components/MapaEntregas'), {
   ssr: false,
   loading: () => (
     <div className="w-full h-[450px] bg-slate-900/80 border border-slate-800 rounded-2xl flex flex-col items-center justify-center text-slate-500 text-xs gap-2">
@@ -456,7 +456,6 @@ export default function AdminPage() {
   const pendentes = projetos.filter((p) => p.status !== 'entregue').length;
   const taxaEntrega = totalProjetos > 0 ? Math.round((entregues / totalProjetos) * 100) : 0;
 
-  // Projetos elegíveis para exibição no mapa (com coordenadas válidas)
   const projetosComGps = projetosFiltrados.filter(
     (p) => p.latitude !== null && p.longitude !== null
   ) as any[];

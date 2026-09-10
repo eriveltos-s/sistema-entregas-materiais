@@ -3,15 +3,16 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
+import nextDynamic from 'next/dynamic';
 import { supabase } from '@/lib/supabase';
-import dynamic from 'next/dynamic';
 
-// Carrega o componente do mapa apenas no cliente (desativa SSR)
-const MapaEntregas = dynamic(() => import('@/components/MapaEntregas'), {
+// Carregamento dinâmico do mapa sem conflito de identificadores
+const MapaEntregas = nextDynamic(() => import('@/components/MapaEntregas'), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-[450px] bg-slate-900 border border-slate-800 rounded-2xl flex items-center justify-center text-slate-500 text-xs">
-      Carregando mapa interativo...
+    <div className="w-full h-[450px] bg-slate-900/80 border border-slate-800 rounded-2xl flex flex-col items-center justify-center text-slate-500 text-xs gap-2">
+      <span className="w-3 h-3 rounded-full bg-emerald-500 animate-ping"></span>
+      <span>Carregando mapa interativo em tempo real...</span>
     </div>
   ),
 });
@@ -124,15 +125,12 @@ export default function AdminPage() {
   async function carregarDados() {
     setCarregando(true);
 
-    // 1. Busca Clientes
     const { data: cData } = await supabase.from('clientes').select('*').order('nome');
     if (cData) setClientes(cData);
 
-    // 2. Busca Motoristas
     const { data: mData } = await supabase.from('motoristas').select('*').order('nome');
     if (mData) setMotoristas(mData);
 
-    // 3. Busca Projetos (com fallback resiliente de relacionamento)
     const { data: pData, error: pErr } = await supabase
       .from('projetos')
       .select(`
@@ -143,8 +141,7 @@ export default function AdminPage() {
       .order('created_at', { ascending: false });
 
     if (pErr) {
-      console.error('Erro na busca completa, tentando busca simples:', pErr.message);
-      // Busca fallback sem relacionamentos para garantir que a tabela nao fique em branco
+      console.error('Erro na busca completa, executando busca simples:', pErr.message);
       const { data: pSimples } = await supabase.from('projetos').select('*').order('created_at', { ascending: false });
       if (pSimples) setProjetos(pSimples as any);
     } else if (pData) {
@@ -459,11 +456,15 @@ export default function AdminPage() {
   const pendentes = projetos.filter((p) => p.status !== 'entregue').length;
   const taxaEntrega = totalProjetos > 0 ? Math.round((entregues / totalProjetos) * 100) : 0;
 
+  const projetosComGps = projetosFiltrados.filter(
+    (p) => p.latitude !== null && p.longitude !== null
+  ) as any[];
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-8 font-sans antialiased selection:bg-emerald-500 selection:text-slate-950 flex flex-col justify-between">
       <div className="max-w-7xl mx-auto space-y-8 w-full">
         
-        {/* CABEÇALHO COM LOGO BBOX */}
+        {/* CABEÇALHO */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900/60 p-5 rounded-2xl border border-slate-800 backdrop-blur-md shadow-xl">
           <div className="flex items-center gap-4">
             <img 
@@ -488,7 +489,7 @@ export default function AdminPage() {
           </button>
         </div>
 
-        {/* ESTATÍSTICAS */}
+        {/* CARD ESTATÍSTICAS */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div className="bg-slate-900/80 border border-slate-800/80 p-5 rounded-2xl shadow-lg relative overflow-hidden group">
             <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Total Projetos</p>
@@ -517,7 +518,7 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* NAVEGAÇÃO */}
+        {/* NAVEGAÇÃO DE ABAS */}
         <div className="flex bg-slate-900/80 p-1.5 rounded-2xl gap-1.5 overflow-x-auto border border-slate-800 shadow-inner">
           {[
             { id: 'projeto', label: '⚡ Novo Projeto' },
@@ -552,7 +553,7 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* FORMULÁRIOS E CONSULTAS */}
+        {/* FORMULÁRIOS DA ABA ATIVA */}
         <div className="bg-slate-900/60 p-6 rounded-2xl border border-slate-800/90 shadow-xl backdrop-blur-md">
           {aba === 'projeto' && (
             <form onSubmit={handleCadastrarProjeto} className="space-y-4 max-w-3xl">
@@ -854,6 +855,20 @@ export default function AdminPage() {
 
         </div>
 
+        {/* MAPA INTERATIVO EM TEMPO REAL */}
+        <div className="space-y-3 bg-slate-900/60 p-5 rounded-2xl border border-slate-800 shadow-xl backdrop-blur-md">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+              <span>🗺️</span> Mapeamento de Entregas Concluídas (GPS em Tempo Real)
+            </h2>
+            <span className="text-xs text-emerald-400 font-semibold bg-emerald-500/10 border border-emerald-500/30 px-3 py-1 rounded-full">
+              📍 {projetosComGps.length} Entregas Mapeadas
+            </span>
+          </div>
+
+          <MapaEntregas projetos={projetosComGps} />
+        </div>
+
         {/* TABELA DE PROJETOS E FILTROS */}
         <div className="space-y-4 pt-2">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
@@ -1049,7 +1064,7 @@ export default function AdminPage() {
           )}
         </div>
 
-        {/* MODAL LIGHTBOX */}
+        {/* MODAL AMPLIAR IMAGEM */}
         {modalImagemUrl && (
           <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
             <div className="relative max-w-3xl w-full bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl p-2">
@@ -1066,7 +1081,7 @@ export default function AdminPage() {
 
       </div>
 
-      {/* RODAPÉ COM LOGO.JPG AMPLIADO */}
+      {/* RODAPÉ */}
       <footer className="w-full pt-8 mt-12 border-t border-slate-800/80 flex items-center justify-center gap-3">
         <img 
           src="LOGO.jpg" 
